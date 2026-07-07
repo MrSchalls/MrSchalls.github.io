@@ -107,6 +107,46 @@ function computeCounts(members) {
   return { main, second };
 }
 
+function totalsOf(order, category, main, second) {
+  return order.map(key => ({ key, value: (main[category][key] || 0) + (second[category][key] || 0) }));
+}
+
+function donutChartSvg(segments, colorOf) {
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  if (!total) return '<p class="chart-empty">No data yet</p>';
+
+  let cumulative = 0;
+  const circles = segments.filter(s => s.value > 0).map(s => {
+    const pct = (s.value / total) * 100;
+    const offset = 25 - cumulative;
+    cumulative += pct;
+    return `<circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="${colorOf(s.key)}" stroke-width="6" stroke-dasharray="${pct} ${100 - pct}" stroke-dashoffset="${offset}"></circle>`;
+  }).join('');
+
+  const legend = segments.map(s => `
+    <li class="donut-legend-item">
+      <span class="legend-swatch" style="background:${colorOf(s.key)}"></span>
+      <span class="legend-label">${ROLE_ICON[s.key] ? ROLE_ICON[s.key] + ' ' : ''}${s.key}</span>
+      <span class="legend-value">${s.value}</span>
+    </li>`).join('');
+
+  return `
+    <div class="donut-chart">
+      <svg viewBox="0 0 42 42" class="donut-svg">${circles}<text x="21" y="24" text-anchor="middle" class="donut-total">${total}</text></svg>
+      <ul class="donut-legend">${legend}</ul>
+    </div>`;
+}
+
+function barChartHtml(segments, colorOf) {
+  const max = Math.max(...segments.map(s => s.value), 1);
+  return `<div class="bar-chart">${segments.map(s => `
+    <div class="bar-row">
+      <span class="bar-label" style="color:${colorOf(s.key)}">${s.key}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(s.value / max) * 100}%;background:${colorOf(s.key)}"></div></div>
+      <span class="bar-value">${s.value}</span>
+    </div>`).join('')}</div>`;
+}
+
 function renderStats(members) {
   const { main, second } = computeCounts(members);
 
@@ -126,6 +166,10 @@ function renderStats(members) {
   document.getElementById('class-stats').innerHTML = rowsHtml(CLASS_ORDER, 'classes', c => CLASS_COLORS[c]);
   document.getElementById('armor-stats').innerHTML = rowsHtml(ARMOR_KEYS, 'armor');
   document.getElementById('total-count').textContent = `${members.length} members`;
+
+  document.getElementById('role-chart').innerHTML = donutChartSvg(totalsOf(ROLE_KEYS, 'roles', main, second), k => ROLE_COLORS[k]);
+  document.getElementById('armor-chart').innerHTML = donutChartSvg(totalsOf(ARMOR_KEYS, 'armor', main, second), k => ARMOR_COLORS[k]);
+  document.getElementById('class-chart').innerHTML = barChartHtml(totalsOf(CLASS_ORDER, 'classes', main, second), k => CLASS_COLORS[k]);
 }
 
 function applyFilters() {
@@ -274,12 +318,34 @@ settingsForm.addEventListener('submit', async (e) => {
   settingsDialog.close();
 });
 
+// ---- Stats view toggle (list / chart) ----
+
+function setupStatsViewToggle() {
+  const toggleBtn = document.getElementById('stats-view-toggle');
+  let view = localStorage.getItem('statsView') || 'chart';
+
+  function apply() {
+    document.querySelectorAll('.stats-list-view').forEach(el => { el.hidden = view === 'chart'; });
+    document.querySelectorAll('.stats-chart-view').forEach(el => { el.hidden = view === 'list'; });
+    toggleBtn.textContent = view === 'list' ? '📊 Chart view' : '📋 List view';
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    view = view === 'list' ? 'chart' : 'list';
+    localStorage.setItem('statsView', view);
+    apply();
+  });
+
+  apply();
+}
+
 // ---- Live sync ----
 
 function init() {
   const statusEl = document.getElementById('status');
   if (canEdit) document.body.classList.add('edit-mode');
   setupFilter();
+  setupStatsViewToggle();
 
   onSnapshot(membersCol, (snapshot) => {
     const events = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));

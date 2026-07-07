@@ -16,21 +16,34 @@
   </header>
 
   <main>
+    <div class="stats-toolbar">
+      <button id="stats-view-toggle" class="filter-btn">📊 Chart view</button>
+    </div>
+
     <section class="stats-panel">
       <div class="stats-col">
         <h2>Roles</h2>
-        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
-        <div id="role-stats"></div>
+        <div class="stats-list-view">
+          <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
+          <div id="role-stats"></div>
+        </div>
+        <div class="stats-chart-view" id="role-chart" hidden></div>
       </div>
       <div class="stats-col">
         <h2>Classes</h2>
-        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
-        <div id="class-stats"></div>
+        <div class="stats-list-view">
+          <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
+          <div id="class-stats"></div>
+        </div>
+        <div class="stats-chart-view" id="class-chart" hidden></div>
       </div>
       <div class="stats-col">
         <h2>Armor</h2>
-        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
-        <div id="armor-stats"></div>
+        <div class="stats-list-view">
+          <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
+          <div id="armor-stats"></div>
+        </div>
+        <div class="stats-chart-view" id="armor-chart" hidden></div>
       </div>
       <div class="total-panel">
         <span id="total-count">Loading…</span>

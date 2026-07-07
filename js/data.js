@@ -70,3 +70,5 @@ const SPEC_ROLE = {
 };
 
 const ROLE_ICON = { Tank: '\u{1F6E1}\u{FE0F}', Healer: '❤️', Melee: '⚔️', Ranged: '\u{1F3F9}' };
+const ROLE_COLORS = { Tank: '#4a90d9', Healer: '#3fa34d', Melee: '#d9534f', Ranged: '#d98a3d' };
+const ARMOR_COLORS = { Cloth: '#8ec6f0', Leather: '#c08552', Mail: '#9fb8c9', Plate: '#e0e0e0' };
