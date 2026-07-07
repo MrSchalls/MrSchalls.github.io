@@ -70,16 +70,32 @@ main {
   color: var(--gold);
 }
 
+.stat-header,
 .stat-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 32px 32px 40px;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.35rem;
+  gap: 0.4rem;
   font-size: 0.85rem;
 }
 
-.stat-count { color: var(--text-dim); }
+.stat-row { margin-bottom: 0.35rem; }
+
+.stat-header {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-header span,
+.stat-num { text-align: right; }
+
+.stat-num { color: var(--text-dim); }
+.stat-num.stat-total { color: var(--text); font-weight: bold; }
 
 .total-panel {
   display: flex;
@@ -120,29 +136,6 @@ main {
 }
 
 .roster-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.class-group-title {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  margin: 0 0 0.75rem;
-  font-size: 1.15rem;
-  letter-spacing: 0.03em;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.4rem;
-}
-
-.class-group-count {
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  font-weight: normal;
-}
-
-.class-group-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;

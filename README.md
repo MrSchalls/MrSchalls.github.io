@@ -20,9 +20,10 @@ top of [`js/app.js`](js/app.js) for details.
 
 ## Editing page text
 
-The subtitle and footer text (e.g. the tier name, or an in-memoriam note) are stored
+The subtitle and footer notes (e.g. the tier name, or in-memoriam notes) are stored
 in Firestore too, editable via the pencil icon next to the subtitle when using the
-edit link — no code changes needed when the raid tier changes.
+edit link — no code changes needed when the raid tier changes. Footer notes are a
+list (one per line in the edit form); the page shows one at random on each visit.
 
 ## Local preview
 

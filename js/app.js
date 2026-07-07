@@ -59,17 +59,8 @@ function playerCardHtml(m) {
 function renderRoster(members) {
   const container = document.getElementById('roster-grid');
 
-  const groups = CLASS_ORDER
-    .map(cls => ({ cls, list: members.filter(m => m.main === cls) }))
-    .filter(g => g.list.length > 0);
-
-  container.innerHTML = groups.map(({ cls, list }) => `
-    <section class="class-group" data-class="${cls}">
-      <h2 class="class-group-title" style="color:${CLASS_COLORS[cls]}">
-        ${cls} <span class="class-group-count">${list.length}</span>
-      </h2>
-      <div class="class-group-grid">${list.map(playerCardHtml).join('')}</div>
-    </section>`).join('');
+  const sorted = [...members].sort((a, b) => CLASS_ORDER.indexOf(a.main) - CLASS_ORDER.indexOf(b.main));
+  container.innerHTML = sorted.map(playerCardHtml).join('');
 
   container.querySelectorAll('.edit-member').forEach(btn => btn.addEventListener('click', () => {
     const member = members.find(m => m.personId === btn.dataset.id);
@@ -91,32 +82,49 @@ function renderRoster(members) {
   applyFilters();
 }
 
+const ROLE_KEYS = ['Tank', 'Healer', 'Melee', 'Ranged'];
+const ARMOR_KEYS = ['Cloth', 'Leather', 'Mail', 'Plate'];
+
 function computeCounts(members) {
-  const roles = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
-  const armor = { Cloth: 0, Leather: 0, Mail: 0, Plate: 0 };
-  const classes = {};
-  CLASS_ORDER.forEach(c => { classes[c] = 0; });
+  const mkCounter = keys => Object.fromEntries(keys.map(k => [k, 0]));
+  const main = { roles: mkCounter(ROLE_KEYS), armor: mkCounter(ARMOR_KEYS), classes: mkCounter(CLASS_ORDER) };
+  const second = { roles: mkCounter(ROLE_KEYS), armor: mkCounter(ARMOR_KEYS), classes: mkCounter(CLASS_ORDER) };
+
   members.forEach(m => {
-    const role = SPEC_ROLE[m.spec];
-    if (role) roles[role]++;
-    if (CLASS_ARMOR[m.main]) armor[CLASS_ARMOR[m.main]]++;
-    if (classes[m.main] !== undefined) classes[m.main]++;
+    const mainRole = SPEC_ROLE[m.spec];
+    if (mainRole) main.roles[mainRole]++;
+    if (CLASS_ARMOR[m.main]) main.armor[CLASS_ARMOR[m.main]]++;
+    if (main.classes[m.main] !== undefined) main.classes[m.main]++;
+
+    if (m.second && m.second !== 'Role Fill') {
+      const secondRole = SPEC_ROLE[m.spec2];
+      if (secondRole) second.roles[secondRole]++;
+      if (CLASS_ARMOR[m.second]) second.armor[CLASS_ARMOR[m.second]]++;
+      if (second.classes[m.second] !== undefined) second.classes[m.second]++;
+    }
   });
-  return { roles, armor, classes };
+
+  return { main, second };
 }
 
 function renderStats(members) {
-  const { roles, armor, classes } = computeCounts(members);
+  const { main, second } = computeCounts(members);
 
-  const rowsHtml = (counts, order, colorOf) => order.map(key => `
-    <div class="stat-row">
-      <span class="stat-label" style="${colorOf ? `color:${colorOf(key)}` : ''}">${ROLE_ICON[key] ? ROLE_ICON[key] + ' ' : ''}${key}</span>
-      <span class="stat-count">${counts[key] || 0}</span>
-    </div>`).join('');
+  const rowsHtml = (order, category, colorOf) => order.map(key => {
+    const m = main[category][key] || 0;
+    const s = second[category][key] || 0;
+    return `
+      <div class="stat-row">
+        <span class="stat-label" style="${colorOf ? `color:${colorOf(key)}` : ''}">${ROLE_ICON[key] ? ROLE_ICON[key] + ' ' : ''}${key}</span>
+        <span class="stat-num">${m}</span>
+        <span class="stat-num">${s}</span>
+        <span class="stat-num stat-total">${m + s}</span>
+      </div>`;
+  }).join('');
 
-  document.getElementById('role-stats').innerHTML = rowsHtml(roles, ['Tank', 'Healer', 'Melee', 'Ranged']);
-  document.getElementById('class-stats').innerHTML = rowsHtml(classes, CLASS_ORDER, c => CLASS_COLORS[c]);
-  document.getElementById('armor-stats').innerHTML = rowsHtml(armor, ['Cloth', 'Leather', 'Mail', 'Plate']);
+  document.getElementById('role-stats').innerHTML = rowsHtml(ROLE_KEYS, 'roles');
+  document.getElementById('class-stats').innerHTML = rowsHtml(CLASS_ORDER, 'classes', c => CLASS_COLORS[c]);
+  document.getElementById('armor-stats').innerHTML = rowsHtml(ARMOR_KEYS, 'armor');
   document.getElementById('total-count').textContent = `${members.length} members`;
 }
 
@@ -124,16 +132,10 @@ function applyFilters() {
   const role = document.querySelector('#role-filters .filter-btn.active')?.dataset.role || 'all';
   const cls = document.querySelector('#class-filters .filter-btn.active')?.dataset.class || 'all';
 
-  document.querySelectorAll('.class-group').forEach(group => {
-    let anyVisible = false;
-    group.querySelectorAll('.player-card').forEach(card => {
-      const roleMatch = role === 'all' || card.dataset.roles.includes(role);
-      const classMatch = cls === 'all' || card.dataset.main === cls;
-      const show = roleMatch && classMatch;
-      card.style.display = show ? '' : 'none';
-      if (show) anyVisible = true;
-    });
-    group.style.display = anyVisible ? '' : 'none';
+  document.querySelectorAll('#roster-grid .player-card').forEach(card => {
+    const roleMatch = role === 'all' || card.dataset.roles.includes(role);
+    const classMatch = cls === 'all' || card.dataset.main === cls;
+    card.style.display = (roleMatch && classMatch) ? '' : 'none';
   });
 }
 
@@ -159,12 +161,11 @@ function setupFilter() {
 
 const dialog = document.getElementById('member-form-dialog');
 const form = document.getElementById('member-form');
-const classOptions = Object.keys(CLASS_SPECS);
 
 function fillClassSelect(select, { allowNone, allowRoleFill } = {}) {
   const opts = [];
   if (allowNone) opts.push('<option value="">— None —</option>');
-  classOptions.forEach(c => opts.push(`<option value="${c}">${c}</option>`));
+  CLASS_ORDER.forEach(c => opts.push(`<option value="${c}">${c}</option>`));
   if (allowRoleFill) opts.push('<option value="Role Fill">Role Fill</option>');
   select.innerHTML = opts.join('');
 }
@@ -184,7 +185,7 @@ function openForm(member) {
   fillClassSelect(form.second, { allowNone: true, allowRoleFill: true });
 
   form.name.value = member?.name || '';
-  form.main.value = member?.main || classOptions[0];
+  form.main.value = member?.main || CLASS_ORDER[0];
   fillSpecSelect(form.spec, form.main.value);
   if (member?.spec) form.spec.value = member.spec;
 
@@ -243,15 +244,16 @@ let currentSettings = {};
 function renderSettings(settings) {
   currentSettings = settings;
   document.querySelector('.subtitle').textContent = settings.subtitle || '';
+  const notes = settings.footerNotes || [];
   const el = document.getElementById('footer-text');
-  if (!settings.footerText) { el.style.display = 'none'; return; }
-  el.textContent = settings.footerText;
+  if (!notes.length) { el.style.display = 'none'; return; }
+  el.textContent = notes[Math.floor(Math.random() * notes.length)];
   el.style.display = 'block';
 }
 
 document.getElementById('edit-settings-btn')?.addEventListener('click', () => {
   settingsForm.subtitle.value = currentSettings.subtitle || '';
-  settingsForm.footerText.value = currentSettings.footerText || '';
+  settingsForm.footerNotes.value = (currentSettings.footerNotes || []).join('\n');
   settingsDialog.showModal();
 });
 
@@ -259,9 +261,10 @@ document.getElementById('cancel-settings-form').addEventListener('click', () => 
 
 settingsForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const footerNotes = settingsForm.footerNotes.value.split('\n').map(s => s.trim()).filter(Boolean);
   await addDoc(settingsCol, {
     subtitle: settingsForm.subtitle.value.trim(),
-    footerText: settingsForm.footerText.value.trim(),
+    footerNotes,
     createdAt: Date.now(),
     editKey: EDIT_KEY,
   });

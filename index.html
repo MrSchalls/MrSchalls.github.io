@@ -19,14 +19,17 @@
     <section class="stats-panel">
       <div class="stats-col">
         <h2>Roles</h2>
+        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
         <div id="role-stats"></div>
       </div>
       <div class="stats-col">
         <h2>Classes</h2>
+        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
         <div id="class-stats"></div>
       </div>
       <div class="stats-col">
         <h2>Armor</h2>
+        <div class="stat-header"><span></span><span>Main</span><span>2nd</span><span>Total</span></div>
         <div id="armor-stats"></div>
       </div>
       <div class="total-panel">
@@ -36,7 +39,7 @@
 
     <nav id="role-filters" class="filters">
       <button class="filter-btn active" data-role="all">All</button>
-      <button class="filter-btn" data-role="Tank">🛡 Tank</button>
+      <button class="filter-btn" data-role="Tank">🛡️ Tank</button>
       <button class="filter-btn" data-role="Healer">❤️ Healer</button>
       <button class="filter-btn" data-role="Melee">⚔️ Melee</button>
       <button class="filter-btn" data-role="Ranged">🏹 Ranged</button>
@@ -81,7 +84,9 @@
       <h2>Edit page text</h2>
 
       <label>Subtitle<input type="text" name="subtitle"></label>
-      <label>Footer text<textarea name="footerText" rows="2"></textarea></label>
+      <label>Footer notes (one per line — a random one is shown each visit)
+        <textarea name="footerNotes" rows="4"></textarea>
+      </label>
 
       <div class="form-actions">
         <button type="button" id="cancel-settings-form">Cancel</button>

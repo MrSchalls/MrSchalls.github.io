@@ -69,4 +69,4 @@ const SPEC_ROLE = {
   'Elemental': 'Ranged', 'Affliction': 'Ranged', 'Demonology': 'Ranged', 'Destruction': 'Ranged', 'Devourer': 'Ranged',
 };
 
-const ROLE_ICON = { Tank: '\u{1F6E1}', Healer: '❤️', Melee: '⚔️', Ranged: '\u{1F3F9}' };
+const ROLE_ICON = { Tank: '\u{1F6E1}\u{FE0F}', Healer: '❤️', Melee: '⚔️', Ranged: '\u{1F3F9}' };
