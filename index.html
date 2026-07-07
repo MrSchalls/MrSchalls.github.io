@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soup Squad — Midnight Roster</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="banner">
+    <h1>Soup Squad</h1>
+    <p class="subtitle">Midnight — Tier 12.1 Class Selection</p>
+  </header>
+
+  <main>
+    <section class="stats-panel">
+      <div class="stats-col">
+        <h2>Roles</h2>
+        <div id="role-stats"></div>
+      </div>
+      <div class="stats-col">
+        <h2>Armor</h2>
+        <div id="armor-stats"></div>
+      </div>
+      <div class="total-panel">
+        <span id="total-count">Loading…</span>
+      </div>
+    </section>
+
+    <nav class="filters">
+      <button class="filter-btn active" data-role="all">All</button>
+      <button class="filter-btn" data-role="Tank">🛡 Tank</button>
+      <button class="filter-btn" data-role="Healer">❤️ Healer</button>
+      <button class="filter-btn" data-role="Melee">⚔️ Melee</button>
+      <button class="filter-btn" data-role="Ranged">🏹 Ranged</button>
+    </nav>
+
+    <section id="roster-grid" class="roster-grid"></section>
+
+    <p id="tribute" class="tribute" style="display:none"></p>
+  </main>
+
+  <footer>
+    <span id="status">Loading roster…</span>
+  </footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
