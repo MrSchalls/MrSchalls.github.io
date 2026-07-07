@@ -108,6 +108,22 @@ main {
   border-left: 1px solid var(--border);
 }
 
+.search-input {
+  display: block;
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin-bottom: 1rem;
+}
+
+.search-input:focus { outline: none; border-color: var(--gold); }
+.search-input::placeholder { color: var(--text-dim); }
+
 .filters {
   display: flex;
   gap: 0.5rem;
@@ -293,6 +309,8 @@ footer {
   color: var(--text-dim);
   font-size: 0.75rem;
 }
+
+footer:has(#status:empty) { display: none; }
 
 footer .error { color: var(--under); }
 

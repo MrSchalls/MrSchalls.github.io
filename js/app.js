@@ -131,11 +131,13 @@ function renderStats(members) {
 function applyFilters() {
   const role = document.querySelector('#role-filters .filter-btn.active')?.dataset.role || 'all';
   const cls = document.querySelector('#class-filters .filter-btn.active')?.dataset.class || 'all';
+  const search = document.getElementById('name-search').value.trim().toLowerCase();
 
   document.querySelectorAll('#roster-grid .player-card').forEach(card => {
     const roleMatch = role === 'all' || card.dataset.roles.includes(role);
     const classMatch = cls === 'all' || card.dataset.main === cls;
-    card.style.display = (roleMatch && classMatch) ? '' : 'none';
+    const nameMatch = !search || card.querySelector('.player-name').textContent.toLowerCase().includes(search);
+    card.style.display = (roleMatch && classMatch && nameMatch) ? '' : 'none';
   });
 }
 
@@ -155,6 +157,7 @@ function setupFilter() {
     btn.classList.add('active');
     applyFilters();
   }));
+  document.getElementById('name-search').addEventListener('input', applyFilters);
 }
 
 // ---- Add / edit form ----
@@ -291,9 +294,7 @@ function init() {
     const members = [...latestByPerson.values()].filter(m => !m.deleted);
     renderStats(members);
     renderRoster(members);
-    statusEl.textContent = canEdit
-      ? `Live — editing enabled`
-      : `Live — ${new Date().toLocaleTimeString()}`;
+    statusEl.textContent = '';
   }, (err) => {
     statusEl.textContent = `Failed to load roster: ${err.message}`;
     statusEl.classList.add('error');
