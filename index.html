@@ -9,7 +9,10 @@
 <body>
   <header class="banner">
     <h1>Soup Squad</h1>
-    <p class="subtitle">Midnight — Tier 12.1 Class Selection</p>
+    <p class="subtitle-row">
+      <span class="subtitle"></span>
+      <button id="edit-settings-btn" class="icon-btn" data-edit-only title="Edit page text">✏️</button>
+    </p>
   </header>
 
   <main>
@@ -17,6 +20,10 @@
       <div class="stats-col">
         <h2>Roles</h2>
         <div id="role-stats"></div>
+      </div>
+      <div class="stats-col">
+        <h2>Classes</h2>
+        <div id="class-stats"></div>
       </div>
       <div class="stats-col">
         <h2>Armor</h2>
@@ -27,18 +34,21 @@
       </div>
     </section>
 
-    <nav class="filters">
+    <nav id="role-filters" class="filters">
       <button class="filter-btn active" data-role="all">All</button>
       <button class="filter-btn" data-role="Tank">🛡 Tank</button>
       <button class="filter-btn" data-role="Healer">❤️ Healer</button>
       <button class="filter-btn" data-role="Melee">⚔️ Melee</button>
       <button class="filter-btn" data-role="Ranged">🏹 Ranged</button>
-      <button id="add-member-btn" class="filter-btn add-btn" data-edit-only>+ Add member</button>
     </nav>
+
+    <nav id="class-filters" class="filters"></nav>
+
+    <button id="add-member-btn" class="filter-btn add-btn" data-edit-only>+ Add member</button>
 
     <section id="roster-grid" class="roster-grid"></section>
 
-    <p id="tribute" class="tribute" style="display:none"></p>
+    <p id="footer-text" class="footer-text" style="display:none"></p>
   </main>
 
   <dialog id="member-form-dialog">
@@ -61,6 +71,20 @@
 
       <div class="form-actions">
         <button type="button" id="cancel-form">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-form-dialog">
+    <form id="settings-form" method="dialog">
+      <h2>Edit page text</h2>
+
+      <label>Subtitle<input type="text" name="subtitle"></label>
+      <label>Footer text<textarea name="footerText" rows="2"></textarea></label>
+
+      <div class="form-actions">
+        <button type="button" id="cancel-settings-form">Cancel</button>
         <button type="submit">Save</button>
       </div>
     </form>

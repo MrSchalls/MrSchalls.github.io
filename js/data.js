@@ -15,13 +15,6 @@ const FIREBASE_CONFIG = {
 // Google Sheet link. Change it (and re-share the link) if it ever leaks.
 const EDIT_KEY = "K5TaDatoYYAm";
 
-// Update these if the raid's target composition changes for a new tier.
-const TARGETS = {
-  roles: { Tank: 2, Healer: 5, Melee: 8, Ranged: 8 },
-  armor: { Cloth: 5, Leather: 6, Mail: 6, Plate: 6 },
-  total: 23,
-};
-
 const CLASS_COLORS = {
   'Death Knight': '#C41F3B',
   'Demon Hunter': '#A330C9',

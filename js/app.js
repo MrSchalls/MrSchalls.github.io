@@ -15,6 +15,7 @@ import {
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const membersCol = collection(db, 'members');
+const settingsCol = collection(db, 'settings');
 
 const params = new URLSearchParams(location.search);
 const canEdit = params.get('key') === EDIT_KEY;
@@ -30,36 +31,51 @@ function specBadge(cls, spec) {
   </span>`;
 }
 
-function renderRoster(members) {
-  const grid = document.getElementById('roster-grid');
-  grid.innerHTML = members.filter(m => !m.tribute).map(m => {
-    const color = CLASS_COLORS[m.main] || '#ccc';
-    const second = (m.second && m.second !== 'Role Fill')
-      ? specBadge(m.second, m.spec2)
-      : m.second === 'Role Fill' ? `<span class="spec-badge rolefill"><span class="role-icon">🔀</span><span class="spec-name">Role Fill</span></span>` : '';
-    const roles = [SPEC_ROLE[m.spec], m.second && m.second !== 'Role Fill' ? SPEC_ROLE[m.spec2] : null].filter(Boolean).join(' ');
-    return `
-      <article class="player-card" data-main="${m.main}" data-roles="${roles}">
-        <div class="card-top">
-          <h3 class="player-name" style="color:${color}">${m.name}</h3>
-          ${canEdit ? `<span class="card-actions">
-            <button class="icon-btn edit-member" data-id="${m.personId}" title="Edit">✏️</button>
-            <button class="icon-btn delete-member" data-id="${m.personId}" title="Delete">🗑️</button>
-          </span>` : ''}
-        </div>
-        <div class="badges">
-          ${specBadge(m.main, m.spec)}
-          ${second}
-        </div>
-        ${m.note ? `<p class="note">${m.note}</p>` : ''}
-      </article>`;
-  }).join('');
+const CLASS_ORDER = Object.keys(CLASS_SPECS);
 
-  grid.querySelectorAll('.edit-member').forEach(btn => btn.addEventListener('click', () => {
+function playerCardHtml(m) {
+  const color = CLASS_COLORS[m.main] || '#ccc';
+  const second = (m.second && m.second !== 'Role Fill')
+    ? specBadge(m.second, m.spec2)
+    : m.second === 'Role Fill' ? `<span class="spec-badge rolefill"><span class="role-icon">🔀</span><span class="spec-name">Role Fill</span></span>` : '';
+  const roles = [SPEC_ROLE[m.spec], m.second && m.second !== 'Role Fill' ? SPEC_ROLE[m.spec2] : null].filter(Boolean).join(' ');
+  return `
+    <article class="player-card" data-main="${m.main}" data-roles="${roles}">
+      <div class="card-top">
+        <h3 class="player-name" style="color:${color}">${m.name}</h3>
+        ${canEdit ? `<span class="card-actions">
+          <button class="icon-btn edit-member" data-id="${m.personId}" title="Edit">✏️</button>
+          <button class="icon-btn delete-member" data-id="${m.personId}" title="Delete">🗑️</button>
+        </span>` : ''}
+      </div>
+      <div class="badges">
+        ${specBadge(m.main, m.spec)}
+        ${second}
+      </div>
+      ${m.note ? `<p class="note">${m.note}</p>` : ''}
+    </article>`;
+}
+
+function renderRoster(members) {
+  const container = document.getElementById('roster-grid');
+
+  const groups = CLASS_ORDER
+    .map(cls => ({ cls, list: members.filter(m => m.main === cls) }))
+    .filter(g => g.list.length > 0);
+
+  container.innerHTML = groups.map(({ cls, list }) => `
+    <section class="class-group" data-class="${cls}">
+      <h2 class="class-group-title" style="color:${CLASS_COLORS[cls]}">
+        ${cls} <span class="class-group-count">${list.length}</span>
+      </h2>
+      <div class="class-group-grid">${list.map(playerCardHtml).join('')}</div>
+    </section>`).join('');
+
+  container.querySelectorAll('.edit-member').forEach(btn => btn.addEventListener('click', () => {
     const member = members.find(m => m.personId === btn.dataset.id);
     openForm(member);
   }));
-  grid.querySelectorAll('.delete-member').forEach(btn => btn.addEventListener('click', async () => {
+  container.querySelectorAll('.delete-member').forEach(btn => btn.addEventListener('click', async () => {
     const member = members.find(m => m.personId === btn.dataset.id);
     if (confirm(`Remove ${member.name} from the roster?`)) {
       await addDoc(membersCol, {
@@ -71,58 +87,71 @@ function renderRoster(members) {
       });
     }
   }));
+
+  applyFilters();
 }
 
 function computeCounts(members) {
   const roles = { Tank: 0, Healer: 0, Melee: 0, Ranged: 0 };
   const armor = { Cloth: 0, Leather: 0, Mail: 0, Plate: 0 };
-  members.filter(m => !m.tribute).forEach(m => {
+  const classes = {};
+  CLASS_ORDER.forEach(c => { classes[c] = 0; });
+  members.forEach(m => {
     const role = SPEC_ROLE[m.spec];
     if (role) roles[role]++;
     if (CLASS_ARMOR[m.main]) armor[CLASS_ARMOR[m.main]]++;
+    if (classes[m.main] !== undefined) classes[m.main]++;
   });
-  return { roles, armor };
+  return { roles, armor, classes };
 }
 
 function renderStats(members) {
-  const { roles, armor } = computeCounts(members);
+  const { roles, armor, classes } = computeCounts(members);
 
-  const barsHtml = (counts, targets, order) => order.map(key => {
-    const have = counts[key] || 0;
-    const need = targets[key];
-    const pct = Math.min(100, Math.round((have / need) * 100));
-    const status = have >= need ? 'met' : 'under';
-    return `
-      <div class="stat-row">
-        <span class="stat-label">${ROLE_ICON[key] || ''} ${key}</span>
-        <div class="stat-bar"><div class="stat-fill ${status}" style="width:${pct}%"></div></div>
-        <span class="stat-count">${have}/${need}</span>
-      </div>`;
-  }).join('');
+  const rowsHtml = (counts, order, colorOf) => order.map(key => `
+    <div class="stat-row">
+      <span class="stat-label" style="${colorOf ? `color:${colorOf(key)}` : ''}">${ROLE_ICON[key] ? ROLE_ICON[key] + ' ' : ''}${key}</span>
+      <span class="stat-count">${counts[key] || 0}</span>
+    </div>`).join('');
 
-  document.getElementById('role-stats').innerHTML = barsHtml(roles, TARGETS.roles, ['Tank', 'Healer', 'Melee', 'Ranged']);
-  document.getElementById('armor-stats').innerHTML = barsHtml(armor, TARGETS.armor, ['Cloth', 'Leather', 'Mail', 'Plate']);
-  const total = members.filter(m => !m.tribute).length;
-  document.getElementById('total-count').textContent = `${total} / ${TARGETS.total} signed up`;
+  document.getElementById('role-stats').innerHTML = rowsHtml(roles, ['Tank', 'Healer', 'Melee', 'Ranged']);
+  document.getElementById('class-stats').innerHTML = rowsHtml(classes, CLASS_ORDER, c => CLASS_COLORS[c]);
+  document.getElementById('armor-stats').innerHTML = rowsHtml(armor, ['Cloth', 'Leather', 'Mail', 'Plate']);
+  document.getElementById('total-count').textContent = `${members.length} members`;
 }
 
-function renderTribute(members) {
-  const tribute = members.find(m => m.tribute);
-  const el = document.getElementById('tribute');
-  if (!tribute) { el.style.display = 'none'; return; }
-  el.innerHTML = `<span class="tribute-name">${tribute.name}</span> — <span class="tribute-note">${tribute.note}</span>`;
-  el.style.display = 'block';
+function applyFilters() {
+  const role = document.querySelector('#role-filters .filter-btn.active')?.dataset.role || 'all';
+  const cls = document.querySelector('#class-filters .filter-btn.active')?.dataset.class || 'all';
+
+  document.querySelectorAll('.class-group').forEach(group => {
+    let anyVisible = false;
+    group.querySelectorAll('.player-card').forEach(card => {
+      const roleMatch = role === 'all' || card.dataset.roles.includes(role);
+      const classMatch = cls === 'all' || card.dataset.main === cls;
+      const show = roleMatch && classMatch;
+      card.style.display = show ? '' : 'none';
+      if (show) anyVisible = true;
+    });
+    group.style.display = anyVisible ? '' : 'none';
+  });
 }
 
 function setupFilter() {
-  const buttons = document.querySelectorAll('.filter-btn');
-  buttons.forEach(btn => btn.addEventListener('click', () => {
-    buttons.forEach(b => b.classList.remove('active'));
+  const classFilters = document.getElementById('class-filters');
+  classFilters.innerHTML = ['<button class="filter-btn active" data-class="all">All</button>']
+    .concat(CLASS_ORDER.map(c => `<button class="filter-btn" data-class="${c}" style="--class-color:${CLASS_COLORS[c]}">${c}</button>`))
+    .join('');
+
+  document.querySelectorAll('#role-filters .filter-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#role-filters .filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const role = btn.dataset.role;
-    document.querySelectorAll('.player-card').forEach(card => {
-      card.style.display = (role === 'all' || card.dataset.roles.includes(role)) ? '' : 'none';
-    });
+    applyFilters();
+  }));
+  document.querySelectorAll('#class-filters .filter-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#class-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
   }));
 }
 
@@ -205,11 +234,46 @@ form.addEventListener('submit', async (e) => {
 
 document.getElementById('add-member-btn')?.addEventListener('click', () => openForm(null));
 
+// ---- Site settings (subtitle / footer text) ----
+
+const settingsDialog = document.getElementById('settings-form-dialog');
+const settingsForm = document.getElementById('settings-form');
+let currentSettings = {};
+
+function renderSettings(settings) {
+  currentSettings = settings;
+  document.querySelector('.subtitle').textContent = settings.subtitle || '';
+  const el = document.getElementById('footer-text');
+  if (!settings.footerText) { el.style.display = 'none'; return; }
+  el.textContent = settings.footerText;
+  el.style.display = 'block';
+}
+
+document.getElementById('edit-settings-btn')?.addEventListener('click', () => {
+  settingsForm.subtitle.value = currentSettings.subtitle || '';
+  settingsForm.footerText.value = currentSettings.footerText || '';
+  settingsDialog.showModal();
+});
+
+document.getElementById('cancel-settings-form').addEventListener('click', () => settingsDialog.close());
+
+settingsForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await addDoc(settingsCol, {
+    subtitle: settingsForm.subtitle.value.trim(),
+    footerText: settingsForm.footerText.value.trim(),
+    createdAt: Date.now(),
+    editKey: EDIT_KEY,
+  });
+  settingsDialog.close();
+});
+
 // ---- Live sync ----
 
 function init() {
   const statusEl = document.getElementById('status');
   if (canEdit) document.body.classList.add('edit-mode');
+  setupFilter();
 
   onSnapshot(membersCol, (snapshot) => {
     const events = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -224,7 +288,6 @@ function init() {
     const members = [...latestByPerson.values()].filter(m => !m.deleted);
     renderStats(members);
     renderRoster(members);
-    renderTribute(members);
     statusEl.textContent = canEdit
       ? `Live — editing enabled`
       : `Live — ${new Date().toLocaleTimeString()}`;
@@ -233,7 +296,11 @@ function init() {
     statusEl.classList.add('error');
   });
 
-  setupFilter();
+  onSnapshot(settingsCol, (snapshot) => {
+    const events = snapshot.docs.map(d => d.data());
+    const latest = events.reduce((a, b) => ((b.createdAt || 0) > (a?.createdAt || 0) ? b : a), null);
+    if (latest) renderSettings(latest);
+  });
 }
 
 init();

@@ -18,10 +18,11 @@ targets a document that already has one. Creates have no prior document to merge
 so this can't be bypassed. See the rules in the Firebase console and the comment at the
 top of [`js/app.js`](js/app.js) for details.
 
-## Updating raid targets
+## Editing page text
 
-When a new tier's target composition changes, edit the `TARGETS` object in
-[`js/data.js`](js/data.js) (role counts, armor counts, total raid size).
+The subtitle and footer text (e.g. the tier name, or an in-memoriam note) are stored
+in Firestore too, editable via the pencil icon next to the subtitle when using the
+edit link — no code changes needed when the raid tier changes.
 
 ## Local preview
 
