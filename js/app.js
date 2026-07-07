@@ -107,8 +107,8 @@ function computeCounts(members) {
   return { main, second };
 }
 
-function totalsOf(order, category, main, second) {
-  return order.map(key => ({ key, value: (main[category][key] || 0) + (second[category][key] || 0) }));
+function mainCountsOf(order, category, main) {
+  return order.map(key => ({ key, value: main[category][key] || 0 }));
 }
 
 function donutChartSvg(segments, colorOf) {
@@ -167,9 +167,9 @@ function renderStats(members) {
   document.getElementById('armor-stats').innerHTML = rowsHtml(ARMOR_KEYS, 'armor');
   document.getElementById('total-count').textContent = `${members.length} members`;
 
-  document.getElementById('role-chart').innerHTML = donutChartSvg(totalsOf(ROLE_KEYS, 'roles', main, second), k => ROLE_COLORS[k]);
-  document.getElementById('armor-chart').innerHTML = donutChartSvg(totalsOf(ARMOR_KEYS, 'armor', main, second), k => ARMOR_COLORS[k]);
-  document.getElementById('class-chart').innerHTML = barChartHtml(totalsOf(CLASS_ORDER, 'classes', main, second), k => CLASS_COLORS[k]);
+  document.getElementById('role-chart').innerHTML = donutChartSvg(mainCountsOf(ROLE_KEYS, 'roles', main), k => ROLE_COLORS[k]);
+  document.getElementById('armor-chart').innerHTML = donutChartSvg(mainCountsOf(ARMOR_KEYS, 'armor', main), k => ARMOR_COLORS[k]);
+  document.getElementById('class-chart').innerHTML = barChartHtml(mainCountsOf(CLASS_ORDER, 'classes', main), k => CLASS_COLORS[k]);
 }
 
 function applyFilters() {
